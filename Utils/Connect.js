@@ -1,8 +1,9 @@
+/* eslint-disable no-undef */
 import { connect } from "mongoose";
 
 const dbConnection = async () => {
   try {
-    return connect("mongodb://localhost:27017/users");
+    return connect(process.env.MONGODB_URI);
   } catch (error) {
     console.error(error);
     throw error;
