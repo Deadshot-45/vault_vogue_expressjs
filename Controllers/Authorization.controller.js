@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import Users from "../models/User.model.js";
+import Users from "../Models/User.model.js";
 import compareEncryptedData from "../Utils/compareEncryption.js";
 import generateOtp from "../Utils/genrateOtp.js";
 import encryptedData from "../Utils/EncData.js";
