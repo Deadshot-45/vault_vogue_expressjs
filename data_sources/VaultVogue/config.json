@@ -1,0 +1,10 @@
+{
+    "name": "VaultVogue",
+    "type": "mongodb-atlas",
+    "config": {
+        "clusterName": "VaultVogue",
+        "readPreference": "primary",
+        "wireProtocolEnabled": false
+    },
+    "version": 1
+}
