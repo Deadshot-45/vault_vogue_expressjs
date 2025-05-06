@@ -110,6 +110,20 @@ const validateRequest = (req, res, next) => {
   next();
 };
 
+// Database connection middleware
+app.use(async (req, res, next) => {
+  try {
+    await dbConnection();
+    next();
+  } catch (error) {
+    logger.error("Database connection error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Database connection error",
+    });
+  }
+});
+
 // Root route
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to the API" });
@@ -137,11 +151,6 @@ app.use((err, req, res, next) => {
         ? "Internal Server Error"
         : err.message,
   });
-});
-
-// Initialize database connection
-dbConnection().catch((err) => {
-  logger.error("Database connection error:", err);
 });
 
 // Export the Express API
