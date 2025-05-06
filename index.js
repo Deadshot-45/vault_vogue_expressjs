@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-// import rateLimit from "express-rate-limit";
+import rateLimit from "express-rate-limit";
 import { validationResult } from "express-validator";
 import winston from "winston";
 import CartRoutes from "./Routes/Cart.routes.js";
@@ -10,10 +10,14 @@ import UserRoutes from "./Routes/User.routes.js";
 import ProductRoutes from "./Routes/Products.routes.js";
 import dbConnection from "./Utils/Connect.js";
 import AuthRoutes from "./Routes/Auth.routes.js";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 // Configure logger
 const logger = winston.createLogger({
-  level: "info",
+  level: process.env.NODE_ENV === "production" ? "info" : "debug",
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.json()
@@ -35,35 +39,32 @@ if (process.env.NODE_ENV !== "production") {
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+      },
+    },
+  })
+);
 
 // Rate limiting
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // limit each IP to 100 requests per windowMs
-// });
-// app.use(limiter);
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === "production" ? 100 : 1000, // limit each IP to 100 requests per windowMs in production
+  message: "Too many requests from this IP, please try again later.",
+});
+app.use(limiter);
 
 // CORS configuration
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "http://localhost:5500",
-      "http://127.0.0.1:5173",
-      "http://127.0.0.1:5500",
-      "https://voguevault.vercel.app",
-    ];
-
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: true, // Allow all origins in development
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
@@ -72,14 +73,33 @@ const corsOptions = {
     "Accept",
   ],
   exposedHeaders: ["Content-Range", "X-Content-Range"],
-  credentials: true, // This is important
-  maxAge: 86400, // 24 hours
+  maxAge: 86400,
   preflightContinue: false,
   optionsSuccessStatus: 204,
 };
 
-// Apply CORS middleware before other middleware
+// Apply CORS middleware before any other middleware
 app.use(cors(corsOptions));
+
+// Add headers middleware
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
 
 // Add headers for image responses
 app.use((req, res, next) => {
@@ -98,6 +118,8 @@ app.use(
   express.static("uploads", {
     setHeaders: (res, path) => {
       if (path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Credentials", "true");
         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
         res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
       }
@@ -105,7 +127,7 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(express.static("public"));
 
 // Request logging middleware
@@ -141,7 +163,7 @@ app.use("*", (req, res) => {
 });
 
 // Error handler
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   logger.error(err.stack);
   res.status(500).json({
     error: true,
@@ -156,8 +178,9 @@ const StartServer = async () => {
   try {
     await dbConnection();
     logger.info("Connected to the database");
-    app.listen(5500, () => {
-      logger.info("Server is running on port 5500");
+    const port = process.env.PORT || 5500;
+    app.listen(port, () => {
+      logger.info(`Server is running on port ${port}`);
     });
   } catch (error) {
     logger.error("Error starting the server:", error);
