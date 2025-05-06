@@ -184,11 +184,22 @@ const resendOtp = async (req, res, next) => {
   }
 };
 
-
-export {
-  signupUser,
-  authenticateUser,
-  verifyotp,
-  resendOtp,
+const logoutUser = async (req, res, next) => {
+  try {
+    const { user } = req.user;
+    const isUser = await Users.findOne({
+      $or: [{ email: user }, { mobile: user }],
+    });
+    if (!isUser) {
+      return res.status(404).json({ error: true, message: "User not found" });
+    }
+    isUser.token = null;
+    await isUser.save();
+    res.status(200).json({ error: false, message: "User logout successfully" });
+  } catch (error) {
+    next(error);
+  }
 };
+
+export { signupUser, authenticateUser, verifyotp, resendOtp, logoutUser };
 // Compare this snippet from server/Controllers/Cart.controller.js:
