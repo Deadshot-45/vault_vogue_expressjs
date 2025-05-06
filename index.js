@@ -15,7 +15,7 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// Configure logger
+// Configure logger for serverless environment
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === "production" ? "info" : "debug",
   format: winston.format.combine(
@@ -23,18 +23,11 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   transports: [
-    new winston.transports.File({ filename: "error.log", level: "error" }),
-    new winston.transports.File({ filename: "combined.log" }),
-  ],
-});
-
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
     new winston.transports.Console({
       format: winston.format.simple(),
-    })
-  );
-}
+    }),
+  ],
+});
 
 const app = express();
 
@@ -56,14 +49,14 @@ app.use(
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === "production" ? 100 : 1000, // limit each IP to 100 requests per windowMs in production
+  max: process.env.NODE_ENV === "production" ? 100 : 1000,
   message: "Too many requests from this IP, please try again later.",
 });
 app.use(limiter);
 
 // CORS configuration
 const corsOptions = {
-  origin: true, // Allow all origins in development
+  origin: true,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
@@ -78,7 +71,7 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
-// Apply CORS middleware before any other middleware
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
 // Add headers middleware
@@ -94,41 +87,13 @@ app.use((req, res, next) => {
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
 
-  // Handle preflight requests
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
   next();
 });
 
-// Add headers for image responses
-app.use((req, res, next) => {
-  if (req.path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
-  }
-  next();
-});
-
-// Serve static files with proper headers
-app.use(
-  "/uploads",
-  express.static("uploads", {
-    setHeaders: (res, path) => {
-      if (path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-        res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
-      }
-    },
-  })
-);
-
 app.use(express.json({ limit: "10mb" }));
-app.use(express.static("public"));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -174,18 +139,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-const StartServer = async () => {
-  try {
-    await dbConnection();
-    logger.info("Connected to the database");
-    const port = process.env.PORT || 5500;
-    app.listen(port, () => {
-      logger.info(`Server is running on port ${port}`);
-    });
-  } catch (error) {
-    logger.error("Error starting the server:", error);
-    process.exit(1);
-  }
-};
+// Initialize database connection
+dbConnection().catch((err) => {
+  logger.error("Database connection error:", err);
+});
 
-StartServer();
+// Export the Express API
+export default app;
