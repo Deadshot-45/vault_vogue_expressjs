@@ -73,7 +73,7 @@ const corsOptions = {
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
-app.use(express.static('public'))
+app.use(express.static("public"));
 
 // Add headers middleware
 app.use((req, res, next) => {
@@ -143,7 +143,7 @@ app.use("*", (req, res) => {
 });
 
 // Error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   logger.error(err.stack);
   res.status(500).json({
     error: true,
