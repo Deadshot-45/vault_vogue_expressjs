@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 // import { createTransport } from "nodemailer";
 
-async function MailSender(otp) {
+async function MailSender(otp, mail) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     secure: false, // true for port 465, false for other ports
@@ -13,7 +13,7 @@ async function MailSender(otp) {
   // send mail with defined transport object
   const info = await transporter.sendMail({
     from: '"VogueVault 👻" <sunnysahu.in2001@gmail.com>', // sender address
-    to: "singhananya420.in@gmail.com", // list of receivers
+    to: mail, // list of receivers
     subject: "OTP verification", // Subject line
     text: "Hello world?", // plain text body
     html: `Your otp is <b>${otp}</b>`, // html body

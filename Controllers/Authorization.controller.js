@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import Users from "../Models/User.model.js";
+import Users from "../models/User.model.js";
 import compareEncryptedData from "../Utils/compareEncryption.js";
 import generateOtp from "../Utils/genrateOtp.js";
 import encryptedData from "../Utils/EncData.js";
@@ -111,7 +111,7 @@ const authenticateUser = async (req, res, next) => {
     }
 
     const otp = generateOtp();
-    await MailSender(otp);
+    await MailSender(otp, isUser.email);
     const encOTP = await encryptedData(otp);
     await Users.updateOne(
       { _id: isUser._id },
@@ -172,7 +172,7 @@ const resendOtp = async (req, res, next) => {
       return res.status(404).json({ message: "Invalid username" });
     }
     let otp = generateOtp();
-    await MailSender(otp);
+    await MailSender(otp, isUser.email);
     let encOTP = await encryptedData(otp);
     await Users.updateOne(
       { _id: isUser._id },

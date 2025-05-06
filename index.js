@@ -73,6 +73,7 @@ const corsOptions = {
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
+app.use(express.static('public'))
 
 // Add headers middleware
 app.use((req, res, next) => {
