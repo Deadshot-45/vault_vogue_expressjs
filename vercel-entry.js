@@ -35,16 +35,20 @@ export default async function handler(req, res) {
 // Configuration for Vercel deployment
 export const config = {
   version: 2,
-  builds: [
-    {
-      src: "index.js",
-      use: "@vercel/node",
-    },
-  ],
+  env: {
+    NODE_ENV: "production",
+  },
   routes: [
     {
       src: "/(.*)",
-      dest: "index.js",
+      dest: "vercel-entry.js",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    },
+  ],
+  builds: [
+    {
+      src: "vercel-entry.js",
+      use: "@vercel/node",
     },
   ],
 };
