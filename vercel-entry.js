@@ -37,18 +37,14 @@ export const config = {
   version: 2,
   builds: [
     {
-      src: "vercel-entry.js",
+      src: "index.js",
       use: "@vercel/node",
     },
   ],
   routes: [
     {
       src: "/(.*)",
-      dest: "vercel-entry.js",
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      dest: "index.js",
     },
   ],
-  env: {
-    NODE_ENV: "production",
-  },
 };
