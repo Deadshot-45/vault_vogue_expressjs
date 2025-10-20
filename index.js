@@ -29,7 +29,7 @@ const logger = winston.createLogger({
   ],
 });
 
-const app = express();
+export const app = express();
 
 // Security middleware
 app.use(
@@ -132,23 +132,28 @@ app.use("/api/data/products", validateRequest, ProductRoutes);
 app.use("/api/data/cart", validateRequest, CartRoutes);
 app.use("/api/data", validateRequest, AuthRoutes);
 
-// 404 handler
-app.use("*", (req, res) => {
+// 404 handler (catch-all)
+app.use((req, res) => {
   logger.warn(`404: ${req.method} ${req.url}`);
   res.status(404).json({ error: true, message: "Page Not Found" });
 });
 
-// Error handler
-app.use((err, req, res) => {
-  logger.error(err.stack);
+// Error handler (include `next` so Express recognizes it as an error-handling middleware)
+app.use((err, req, res, next) => {
+  logger.error(err && err.stack ? err.stack : err);
   res.status(500).json({
     error: true,
     message:
       process.env.NODE_ENV === "production"
         ? "Internal Server Error"
-        : err.message,
+        : err && err.message
+        ? err.message
+        : String(err),
   });
 });
 
-// Export the Express API
-export default app;
+// Export a serverless-compatible handler as the default export.
+// Some serverless platforms expect a function handler instead of an Express app instance.
+export default function handler(req, res) {
+  return app(req, res);
+}
