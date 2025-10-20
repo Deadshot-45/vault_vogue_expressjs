@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { validationResult } from "express-validator";
+// validationResult from express-validator removed due to vulnerable transitive dependency (validator)
 import winston from "winston";
 import CartRoutes from "./Routes/Cart.routes.js";
 import UserRoutes from "./Routes/User.routes.js";
@@ -102,14 +102,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// Request validation middleware
-const validateRequest = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  next();
-};
+// Request validation middleware (no-op)
+// express-validator was removed because it pulls in a vulnerable `validator` version.
+// If you need request validation, replace with a safer library (e.g. joi) or add custom checks.
+const validateRequest = (req, res, next) => next();
 
 // Database connection middleware
 app.use(async (req, res, next) => {

@@ -11,6 +11,9 @@ yarn-error.log
 .env.test.local
 .env.production.local
 
+
+
+
 # Logs
 logs
 *.log
@@ -91,3 +94,14 @@ Thumbs.db
 
 # Debug
 .debug/
+
+# Package files and lockfiles
+# WARNING: Ignoring `package.json` is rarely recommended because it contains project metadata and dependency lists.
+# Usually you should ignore lockfiles only when you intentionally don't want to commit them.
+# Add the entries below if you really want to avoid pushing package manifests/locks.
+package.json
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+pnpm-lock.yaml
+package-lock.*
