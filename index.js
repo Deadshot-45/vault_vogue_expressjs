@@ -31,6 +31,10 @@ const logger = winston.createLogger({
 
 export const app = express();
 
+// Set Express to trust proxy headers (like X-Forwarded-For) since the app is deployed on Vercel.
+// This is necessary for express-rate-limit to function correctly.
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(
   helmet({
@@ -71,9 +75,7 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
-app.use(express.static("public"));
+
 
 // Add headers middleware
 app.use((req, res, next) => {
@@ -103,6 +105,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Apply CORS middleware
+app.use(cors(corsOptions));
+app.use(express.static("public"));
 app.use(express.json({ limit: "10mb" }));
 
 // Request logging middleware
