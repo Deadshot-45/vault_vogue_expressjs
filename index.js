@@ -54,22 +54,39 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration
+// 1. CORS Configuration Object (Based on your requirements)
 const corsOptions = {
-  origin: true,
-  credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-  ],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 86400,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
+    // List of allowed origins for your frontend application.
+    // The server will check the incoming Origin header against this list.
+    origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
+    
+    // CRITICAL: This allows cookies, Authorization headers, and other credentials 
+    // to be sent and received. It must be 'true' if your frontend uses 
+    // `withCredentials: true`. Note: When this is true, 'origin' CANNOT be '*'.
+    credentials: true,
+    
+    // Explicitly allowed HTTP methods
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+
+    // Explicitly allowed request headers (required for non-simple requests)
+    allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Accept",
+    ],
+
+    // Headers the server allows the browser to access
+    exposedHeaders: ["Content-Range", "X-Content-Range"],
+
+    // Preflight cache duration (24 hours)
+    maxAge: 86400,
+
+    // Status code to send for successful OPTIONS (preflight) requests
+    optionsSuccessStatus: 204, 
+    
+    // Do not pass the OPTIONS request to other routes (let cors handle it)
+    preflightContinue: false,
 };
 
 // Apply CORS middleware
