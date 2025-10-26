@@ -128,30 +128,38 @@ app.use((req, res, next) => {
 const validateRequest = (req, res, next) => next();
 
 
-// --- COLD START OPTIMIZATION FOR DATABASE CONNECTION ---
-// Use a flag to ensure the connection function is only called once per serverless instance
-let isDbConnected = false;
+// --- ROBUST SERVERLESS COLD START OPTIMIZATION FOR DATABASE CONNECTION ---
+// Use a global variable to store the connection promise, ensuring the connection
+// function is only executed once per serverless instance lifetime.
+let dbPromise = null;
 
 // Database connection middleware
 app.use(async (req, res, next) => {
-  // If already connected in this instance, skip the connection logic
-  if (isDbConnected) {
-    return next();
+  if (dbPromise === null) {
+    // Execute the connection function and store the resulting promise.
+    // The .catch() ensures that if the initial connection fails, the promise
+    // still exists in a rejected state, which prevents connection spam.
+    dbPromise = dbConnection().catch(error => {
+      logger.error("Fatal: Initial Database connection failed.", error);
+      // Re-throw the error so the .catch block below can handle the response.
+      throw error; 
+    });
   }
-  
+
   try {
-    await dbConnection();
-    isDbConnected = true; // Mark as connected after successful connection
+    // All concurrent and subsequent requests will await the same promise.
+    await dbPromise;
     next();
   } catch (error) {
-    logger.error("Database connection error:", error);
+    // This catches the connection failure and sends a 500 response.
+    logger.error("Database connection error caught in middleware:", error);
     res.status(500).json({
       error: true,
       message: "Database connection error",
     });
   }
 });
-// ----------------------------------------------------
+// ----------------------------------------------------------------------
 
 
 // Root route
