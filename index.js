@@ -85,6 +85,7 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
+    console.log("Access-Control-Allow-Origin set to:", origin);
   }
   res.header("Access-Control-Allow-Credentials", "true");
   res.header(
@@ -124,7 +125,7 @@ app.use(async (req, res, next) => {
     logger.error("Database connection error:", error);
     res.status(500).json({
       error: true,
-      message: "Database connection error",
+      message: error,
     });
   }
 });
