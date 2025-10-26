@@ -13,18 +13,7 @@
       "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     }
   ],
-  
-  "headers": [
-    {
-      "source": "/(.*)\\.(?:png|jpg|jpeg|gif|svg|ico)$",
-      "headers": [
-        {
-          "key": "Cross-Origin-Resource-Policy",
-          "value": "cross-origin"
-        }
-      ]
-    }
-  ],
+
 
   "env": {
     "NODE_ENV": "production"
