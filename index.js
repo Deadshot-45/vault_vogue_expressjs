@@ -56,7 +56,7 @@ app.use(limiter);
 
 // CORS configuration
 const corsOptions = {
-  origin: true,
+  origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
@@ -77,7 +77,14 @@ app.use(express.static("public"));
 
 // Add headers middleware
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "https://vogue-vault-blue.vercel.app",
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
   res.header("Access-Control-Allow-Credentials", "true");
   res.header(
     "Access-Control-Allow-Methods",
