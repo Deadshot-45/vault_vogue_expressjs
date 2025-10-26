@@ -13,7 +13,7 @@ import AuthRoutes from "./Routes/Auth.routes.js";
 import dotenv from "dotenv";
 
 // Load environment variables
-dotenv.config();
+// dotenv.config();
 
 // Configure logger for serverless environment
 const logger = winston.createLogger({
