@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -128,10 +127,21 @@ app.use((req, res, next) => {
 // If you need request validation, replace with a safer library (e.g. joi) or add custom checks.
 const validateRequest = (req, res, next) => next();
 
+
+// --- COLD START OPTIMIZATION FOR DATABASE CONNECTION ---
+// Use a flag to ensure the connection function is only called once per serverless instance
+let isDbConnected = false;
+
 // Database connection middleware
 app.use(async (req, res, next) => {
+  // If already connected in this instance, skip the connection logic
+  if (isDbConnected) {
+    return next();
+  }
+  
   try {
     await dbConnection();
+    isDbConnected = true; // Mark as connected after successful connection
     next();
   } catch (error) {
     logger.error("Database connection error:", error);
@@ -141,6 +151,8 @@ app.use(async (req, res, next) => {
     });
   }
 });
+// ----------------------------------------------------
+
 
 // Root route
 app.get("/", (req, res) => {
