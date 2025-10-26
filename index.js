@@ -56,7 +56,7 @@ app.use(limiter);
 
 // CORS configuration
 const corsOptions = {
-  origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
+  origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app", "https://vault-vogue-expressjs.vercel.app"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
@@ -80,6 +80,7 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     "http://localhost:5173",
     "https://vogue-vault-blue.vercel.app",
+    "https://vault-vogue-expressjs.vercel.app"
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
