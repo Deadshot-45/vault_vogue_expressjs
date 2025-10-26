@@ -55,10 +55,24 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // 1. CORS Configuration Object (Based on your requirements)
+const allowedOrigins = ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"];
+
 const corsOptions = {
-    // List of allowed origins for your frontend application.
-    // The server will check the incoming Origin header against this list.
-    origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
+    // We use a function to check the origin for greater flexibility 
+    // and better error handling, which is essential when credentials: true are used.
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true); 
+
+        // Check if the origin is in our allowed list
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true); // Origin is allowed
+        } else {
+            // Reject the origin. This will be the source of your 403 or CORS error.
+            // The error message helps you confirm the blocked origin in your server logs.
+            callback(new Error(`Origin ${origin} not allowed by CORS.`), false);
+        }
+    },
     
     // CRITICAL: This allows cookies, Authorization headers, and other credentials 
     // to be sent and received. It must be 'true' if your frontend uses 
@@ -82,42 +96,48 @@ const corsOptions = {
     // Preflight cache duration (24 hours)
     maxAge: 86400,
 
-    // Status code to send for successful OPTIONS (preflight) requests
+    // Status code to use for successful OPTIONS (preflight) requests
     optionsSuccessStatus: 204, 
     
     // Do not pass the OPTIONS request to other routes (let cors handle it)
     preflightContinue: false,
 };
 
-// Apply CORS middleware
+// 2. Apply the CORS Middleware globally
 app.use(cors(corsOptions));
+
+// 3. Handle Preflight Requests explicitly (Express/CORS best practice)
+// This ensures that complex requests (like PUT/DELETE or those with custom headers) 
+// are correctly pre-flighted by the browser.
+app.options('*', cors(corsOptions)); 
+
 app.use(express.static("public"));
 
-// Add headers middleware
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "https://vogue-vault-blue.vercel.app",
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
+// // Add headers middleware
+// app.use((req, res, next) => {
+//   const allowedOrigins = [
+//     "http://localhost:5173",
+//     "https://vogue-vault-blue.vercel.app",
+//   ];
+//   const origin = req.headers.origin;
+//   if (allowedOrigins.includes(origin)) {
+//     res.header("Access-Control-Allow-Origin", origin);
+//   }
+//   res.header("Access-Control-Allow-Credentials", "true");
+//   res.header(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+//   );
+//   res.header(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+//   );
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-  next();
-});
+//   if (req.method === "OPTIONS") {
+//     return res.status(200).end();
+//   }
+//   next();
+// });
 
 app.use(express.json({ limit: "10mb" }));
 
