@@ -56,8 +56,9 @@ app.use(limiter);
 
 // CORS configuration
 const corsOptions = {
-  origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
+  origin: true,
   credentials: true,
+  optionsSuccessStatus: 200,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
