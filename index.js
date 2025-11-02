@@ -31,6 +31,10 @@ const logger = winston.createLogger({
 
 export const app = express();
 
+// Set Express to trust proxy headers (like X-Forwarded-For) since the app is deployed on Vercel.
+// This is necessary for express-rate-limit to function correctly.
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(
   helmet({
@@ -70,7 +74,7 @@ var corsOptionsDelegate = function (req, callback) {
 
 // CORS configuration
 // const corsOptions = {
-//   origin: ["https://vogue-vault-blue.vercel.app"],
+//   origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
 //   credentials: true,
 //   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 //   allowedHeaders: [
@@ -90,32 +94,36 @@ app.use(cors(corsOptionsDelegate));
 app.use(express.static("public"));
 
 // Add headers middleware
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    // "http://localhost:5173",
-    "https://vogue-vault-blue.vercel.app",
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-    console.log("Access-Control-Allow-Origin set to:", origin);
-  }
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
+// app.use((req, res, next) => {
+//   const allowedOrigins = [
+//     // "http://localhost:5173",
+//     "https://vogue-vault-blue.vercel.app",
+//     "https://vault-vogue-expressjs.vercel.app"
+//   ];
+//   const origin = req.headers.origin;
+//   if (allowedOrigins.includes(origin)) {
+//     res.header("Access-Control-Allow-Origin", origin);
+//     console.log("Access-Control-Allow-Origin set to:", origin);
+//   }
+//   res.header("Access-Control-Allow-Credentials", "true");
+//   res.header(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+//   );
+//   res.header(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+//   );
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-  next();
-});
+//   if (req.method === "OPTIONS") {
+//     return res.status(200).end();
+//   }
+//   next();
+// });
 
+// Apply CORS middleware
+// app.use(cors(corsOptions));
+// app.use(express.static("public"));
 app.use(express.json({ limit: "10mb" }));
 
 // Request logging middleware
@@ -138,7 +146,7 @@ app.use(async (req, res, next) => {
     logger.error("Database connection error:", error);
     res.status(500).json({
       error: true,
-      message: "Database connection error",
+      message: error,
     });
   }
 });
