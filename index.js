@@ -35,30 +35,16 @@ export const app = express();
 // This is necessary for express-rate-limit to function correctly.
 app.set("trust proxy", 1);
 
-// Security middleware
+// Security middleware - CSP disabled for API server to allow cross-origin requests
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"],
-      },
-    },
+    contentSecurityPolicy: false, // Disable CSP for API server
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin requests
+    crossOriginEmbedderPolicy: false, // Allow cross-origin embedding
   })
 );
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === "production" ? 100 : 1000,
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use(limiter);
-
-// CORS configuration
+// CORS configuration - MUST be before rate limiting to handle preflight requests
 const allowedOrigins = [
   "https://vogue-vault-blue.vercel.app",
   "http://localhost:5173",
@@ -97,8 +83,17 @@ const corsOptionsDelegate = function (req, callback) {
   callback(null, corsOptions); // callback expects two parameters: error and options
 };
 
-// Apply CORS middleware
+// Apply CORS middleware FIRST (before rate limiting)
 app.use(cors(corsOptionsDelegate));
+
+// Rate limiting - skip for OPTIONS (preflight) requests
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === "production" ? 100 : 1000,
+  message: "Too many requests from this IP, please try again later.",
+  skip: (req) => req.method === "OPTIONS", // Skip rate limiting for preflight requests
+});
+app.use(limiter);
 app.use(express.static("public"));
 app.use(express.json({ limit: "10mb" }));
 
