@@ -62,7 +62,7 @@ const corsOptionsDelegate = function (req, callback) {
     )
   ) {
     corsOptions = {
-      origin: true, // reflect (enable) the requested origin in the CORS response
+      origin: true, // Reflect the requested origin in the CORS response
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: [
@@ -71,14 +71,22 @@ const corsOptionsDelegate = function (req, callback) {
         "X-Requested-With",
         "Accept",
         "Origin",
+        "Cookie", // Allow cookies
       ],
       exposedHeaders: ["Content-Range", "X-Content-Range"],
       maxAge: 86400,
       preflightContinue: false,
       optionsSuccessStatus: 204,
     };
+    // Log CORS success in development
+    if (process.env.NODE_ENV !== "production") {
+      logger.debug(`CORS allowed for origin: ${origin}`);
+    }
   } else {
     corsOptions = { origin: false }; // disable CORS for this request
+    if (process.env.NODE_ENV !== "production") {
+      logger.warn(`CORS blocked for origin: ${origin || "undefined"}`);
+    }
   }
   callback(null, corsOptions); // callback expects two parameters: error and options
 };
@@ -99,7 +107,9 @@ app.use(express.json({ limit: "10mb" }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`);
+  logger.info(
+    `${req.method} ${req.url} - Origin: ${req.headers.origin || "none"}`
+  );
   next();
 });
 
