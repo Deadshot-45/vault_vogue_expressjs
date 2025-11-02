@@ -33,7 +33,7 @@ export const app = express();
 
 // Set Express to trust proxy headers (like X-Forwarded-For) since the app is deployed on Vercel.
 // This is necessary for express-rate-limit to function correctly.
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 // Security middleware
 app.use(
@@ -58,68 +58,44 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-var whitelist = [
+// CORS configuration
+const allowedOrigins = [
   "https://vogue-vault-blue.vercel.app",
   "http://localhost:5173",
+  "https://vault-vogue-expressjs.vercel.app",
 ];
-var corsOptionsDelegate = function (req, callback) {
-  var corsOptions;
-  if (whitelist.indexOf(req.header("Origin")) !== -1) {
-    corsOptions = { origin: true }; // reflect (enable) the requested origin in the CORS response
+
+const corsOptionsDelegate = function (req, callback) {
+  const origin = req.headers.origin;
+  let corsOptions;
+  // Check if origin is in whitelist (case-insensitive, handle undefined)
+  if (
+    origin &&
+    allowedOrigins.some(
+      (allowed) => allowed.toLowerCase() === origin.toLowerCase()
+    )
+  ) {
+    corsOptions = {
+      origin: true, // reflect (enable) the requested origin in the CORS response
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Accept",
+        "Origin",
+      ],
+      exposedHeaders: ["Content-Range", "X-Content-Range"],
+      maxAge: 86400,
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    };
   } else {
     corsOptions = { origin: false }; // disable CORS for this request
   }
   callback(null, corsOptions); // callback expects two parameters: error and options
 };
-
-// CORS configuration
-// const corsOptions = {
-//   origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
-//   credentials: true,
-//   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-//   allowedHeaders: [
-//     "Content-Type",
-//     "Authorization",
-//     "X-Requested-With",
-//     "Accept",
-//   ],
-//   exposedHeaders: ["Content-Range", "X-Content-Range"],
-//   maxAge: 86400,
-//   preflightContinue: false,
-//   optionsSuccessStatus: 204,
-// };
-
-// Apply CORS middleware
-app.use(cors(corsOptionsDelegate));
-app.use(express.static("public"));
-
-// Add headers middleware
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "https://vogue-vault-blue.vercel.app",
-    "https://vault-vogue-expressjs.vercel.app"
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-    console.log("Access-Control-Allow-Origin set to:", origin);
-  }
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-  next();
-});
 
 // Apply CORS middleware
 app.use(cors(corsOptionsDelegate));
