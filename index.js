@@ -54,36 +54,51 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration
-const corsOptions = {
-  origin: ["http://localhost:5173", "https://vogue-vault-blue.vercel.app"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-  ],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 86400,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
+var whitelist = [
+  "https://vogue-vault-blue.vercel.app",
+  "http://localhost:5173",
+];
+var corsOptionsDelegate = function (req, callback) {
+  var corsOptions;
+  if (whitelist.indexOf(req.header("Origin")) !== -1) {
+    corsOptions = { origin: true }; // reflect (enable) the requested origin in the CORS response
+  } else {
+    corsOptions = { origin: false }; // disable CORS for this request
+  }
+  callback(null, corsOptions); // callback expects two parameters: error and options
 };
 
+// CORS configuration
+// const corsOptions = {
+//   origin: ["https://vogue-vault-blue.vercel.app"],
+//   credentials: true,
+//   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+//   allowedHeaders: [
+//     "Content-Type",
+//     "Authorization",
+//     "X-Requested-With",
+//     "Accept",
+//   ],
+//   exposedHeaders: ["Content-Range", "X-Content-Range"],
+//   maxAge: 86400,
+//   preflightContinue: false,
+//   optionsSuccessStatus: 204,
+// };
+
 // Apply CORS middleware
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 app.use(express.static("public"));
 
 // Add headers middleware
 app.use((req, res, next) => {
   const allowedOrigins = [
-    "http://localhost:5173",
+    // "http://localhost:5173",
     "https://vogue-vault-blue.vercel.app",
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
+    console.log("Access-Control-Allow-Origin set to:", origin);
   }
   res.header("Access-Control-Allow-Credentials", "true");
   res.header(
@@ -164,3 +179,11 @@ app.use((err, req, res, next) => {
 export default function handler(req, res) {
   return app(req, res);
 }
+
+app.listen(process.env.PORT || 3000, () => {
+  logger.info(
+    `Server running in ${process.env.NODE_ENV} mode on port ${
+      process.env.PORT || 3000
+    }`
+  );
+});
