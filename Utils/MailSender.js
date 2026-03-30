@@ -7,7 +7,7 @@ async function MailSender(otp, mail) {
     secure: false, // true for port 465, false for other ports
     auth: {
       user: "sunnysahu.in2001@gmail.com",
-      pass: "rjtvybsfqcsjzuaw",
+      pass: "rfhjgyujmbcsoclq",
     },
   });
   // send mail with defined transport object
